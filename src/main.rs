@@ -124,35 +124,25 @@ fn main() {
     let mut remaining = 5u;
     while remaining != 0 {
         for &(ref tx, ref rx) in philosophers.iter() {
-            process_philosopher(&mut chopsticks, tx, rx, &mut remaining);
+            let response = match rx.try_recv() {
+                Ok(action) => action,
+                Err(_) => return,
+            };
+
+            match response {
+                Sated => { remaining += -1 },
+                Take(x) => {
+                    if chopsticks[x - 1] {
+                        tx.send(NotAllowed);
+                    } else {
+                        chopsticks[x - 1] = true;
+                        tx.send(Allowed);
+                    }
+                },
+                Put(x) => { chopsticks[x - 1] = false; },
+            }
         }
     }
 
     println!("Done!");
-}
-
-fn process_philosopher(chopsticks: &mut [bool, ..5],
-                       tx: &Sender<PickupPermission>,
-                       rx: &Receiver<PhilosopherAction>,
-                       remaining: &mut uint) {
-
-    let response = match rx.try_recv() {
-        Ok(action) => action,
-        Err(_) => return,
-    };
-        
-    match response {
-        Sated => {
-            *remaining += -1;
-        },
-        Take(x) => {
-            if chopsticks[x - 1] {
-                tx.send(NotAllowed);
-            } else {
-                chopsticks[x - 1] = true;
-                tx.send(Allowed);
-            }
-        },
-        Put(x) => { chopsticks[x - 1] = false; },
-    }
 }
