@@ -9,8 +9,8 @@ struct Philosopher {
     name: String,
     sender: Sender<int>,
     receiver: Receiver<PickupPermission>,
-    left_hand: uint,
-    right_hand: uint,
+    first_chopstick: uint,
+    second_chopstick: uint,
 }
 
 impl Philosopher {
@@ -25,28 +25,28 @@ impl Philosopher {
             println!("{} is hungry.", self.name);
 
             loop {
-                self.sender.send(self.left_hand as int);
+                self.sender.send(self.first_chopstick as int);
                 match self.receiver.recv() { Allowed => break, _ => {}}
             }
 
-            println!("{} picked up their left chopstick.", self.name);
+            println!("{} picked up their first chopstick.", self.name);
 
             loop {
-                self.sender.send(self.right_hand as int);
+                self.sender.send(self.second_chopstick as int);
                 match self.receiver.recv() { Allowed => break, _ => {}}
             }
 
-            println!("{} picked up their right chopstick.", self.name);
+            println!("{} picked up their second chopstick.", self.name);
             println!("{} is eating.", self.name);
             
             sleep(10_000u64);
 
             println!("{} is done eating.", self.name);
 
-            self.sender.send(self.left_hand as int * -1);
-            println!("{} has put down their left chopstick.", self.name);
-            self.sender.send(self.right_hand as int * -1);
-            println!("{} has put down their right chopstick.", self.name);
+            self.sender.send(self.first_chopstick as int * -1);
+            println!("{} has put down their first chopstick.", self.name);
+            self.sender.send(self.second_chopstick as int * -1);
+            println!("{} has put down their second chopstick.", self.name);
         }
 
         self.sender.send(0);
@@ -56,8 +56,8 @@ impl Philosopher {
     }
 
     fn new(name: &str,
-           left_hand: uint,
-           right_hand: uint) -> (Philosopher, Sender<PickupPermission>, Receiver<int>) {
+           first_chopstick: uint,
+           second_chopstick: uint) -> (Philosopher, Sender<PickupPermission>, Receiver<int>) {
         let (tx, rx)   = channel();
         let (tx1, rx1) = channel();
 
@@ -65,8 +65,8 @@ impl Philosopher {
             name: name.to_string(),
             sender: tx,
             receiver: rx1,
-            left_hand: left_hand,
-            right_hand: right_hand,
+            first_chopstick: first_chopstick,
+            second_chopstick: second_chopstick,
         };
         
         (p, tx1, rx)
