@@ -3,7 +3,7 @@ use std::io::timer::sleep;
 struct Philosopher {
     name: String,
     sender: Sender<int>,
-    receiver: Receiver<int>,
+    receiver: Receiver<bool>,
     left_hand: uint,
     right_hand: uint,
 }
@@ -21,14 +21,14 @@ impl Philosopher {
 
             loop {
                 self.sender.send(self.left_hand as int);
-                if self.receiver.recv() != 0 { break; }
+                if self.receiver.recv() { break; }
             }
 
             println!("{} picked up their left chopstick.", self.name);
 
             loop {
                 self.sender.send(self.right_hand as int);
-                if self.receiver.recv() != 0 { break; }
+                if self.receiver.recv() { break; }
             }
 
             println!("{} picked up their right chopstick.", self.name);
@@ -52,7 +52,7 @@ impl Philosopher {
 
     fn new(name: &str,
            left_hand: uint,
-           right_hand: uint) -> (Philosopher, Sender<int>, Receiver<int>) {
+           right_hand: uint) -> (Philosopher, Sender<bool>, Receiver<int>) {
         let (tx, rx)   = channel();
         let (tx1, rx1) = channel();
 
@@ -101,7 +101,7 @@ fn main() {
 }
 
 fn process_philosopher(chopsticks: &mut [bool, ..5],
-                       tx: &Sender<int>,
+                       tx: &Sender<bool>,
                        rx: &Receiver<int>,
                        remaining: &mut uint) {
 
@@ -113,14 +113,14 @@ fn process_philosopher(chopsticks: &mut [bool, ..5],
     match response {
         0 => {
             *remaining += -1;
-            tx.send(0);
+            tx.send(false);
         },
         x if x > 0 => {
             if chopsticks[(x - 1) as uint] {
-                tx.send(0);
+                tx.send(false);
             } else {
                 chopsticks[(x - 1) as uint] = true;
-                tx.send(1);
+                tx.send(true);
             }
         },
         x => { chopsticks[((-x) - 1) as uint] = false; },
