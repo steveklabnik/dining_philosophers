@@ -136,7 +136,7 @@ impl Table {
 
     fn have_dinner(&mut self) {
         while self.remaining != 0 {
-            for channel in self.philosophers.iter() {
+            for &channel in self.philosophers.iter() {
                 let response = match channel.try_recv() {
                     Ok(action) => action,
                     Err(_) => continue,
