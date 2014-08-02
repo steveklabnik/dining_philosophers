@@ -33,8 +33,6 @@ enum Status {
 struct Chopstick(Status);
 
 fn main() {
-    let channels = Vec::from_fn(4, |_| channel::<int>());
-
     let (p, rx) = Philosopher::new("Karl Marx", 1, 2,);
 
     spawn(proc() {
