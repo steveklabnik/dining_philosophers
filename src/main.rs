@@ -30,34 +30,53 @@ impl Philosopher {
 
             println!("{} is hungry.", self.name);
 
-            loop {
-                self.sender.send(Take(self.first_chopstick));
-                match self.receiver.recv() { Allowed => break, _ => {}}
-            }
-
+            self.take_first_chopstick();
             println!("{} picked up their first chopstick.", self.name);
 
-            loop {
-                self.sender.send(Take(self.second_chopstick));
-                match self.receiver.recv() { Allowed => break, _ => {}}
-            }
-
+            self.take_second_chopstick();
             println!("{} picked up their second chopstick.", self.name);
+
             println!("{} is eating.", self.name);
             
             sleep(10_000u64);
-
             println!("{} is done eating.", self.name);
 
-            self.sender.send(Put(self.first_chopstick ));
+            self.put_first_chopstick();
             println!("{} has put down their first chopstick.", self.name);
-            self.sender.send(Put(self.second_chopstick));
+            self.put_second_chopstick();
             println!("{} has put down their second chopstick.", self.name);
         }
 
         self.sender.send(Sated);
 
         println!("{} is done with their meal.", self.name);
+    }
+
+    fn take_first_chopstick(&self) {
+        self.take_chopstick(self.first_chopstick);
+    }
+
+    fn take_second_chopstick(&self) {
+        self.take_chopstick(self.second_chopstick);
+    }
+
+    fn take_chopstick(&self, chopstick: uint) {
+        loop {
+            self.sender.send(Take(chopstick));
+            match self.receiver.recv() { Allowed => break, _ => {}}
+        }
+    }
+
+    fn put_first_chopstick(&self) {
+        self.put_chopstick(self.first_chopstick);
+    }
+
+    fn put_second_chopstick(&self) {
+        self.put_chopstick(self.second_chopstick);
+    }
+
+    fn put_chopstick(&self, chopstick: uint) {
+        self.sender.send(Put(chopstick));
     }
 
     fn new(name: &str,
