@@ -1,9 +1,14 @@
 use std::io::timer::sleep;
 
+enum PickupPermission {
+    Allowed,
+    NotAllowed, 
+}
+
 struct Philosopher {
     name: String,
     sender: Sender<int>,
-    receiver: Receiver<bool>,
+    receiver: Receiver<PickupPermission>,
     left_hand: uint,
     right_hand: uint,
 }
@@ -21,14 +26,14 @@ impl Philosopher {
 
             loop {
                 self.sender.send(self.left_hand as int);
-                if self.receiver.recv() { break; }
+                match self.receiver.recv() { Allowed => break, _ => {}}
             }
 
             println!("{} picked up their left chopstick.", self.name);
 
             loop {
                 self.sender.send(self.right_hand as int);
-                if self.receiver.recv() { break; }
+                match self.receiver.recv() { Allowed => break, _ => {}}
             }
 
             println!("{} picked up their right chopstick.", self.name);
@@ -52,7 +57,7 @@ impl Philosopher {
 
     fn new(name: &str,
            left_hand: uint,
-           right_hand: uint) -> (Philosopher, Sender<bool>, Receiver<int>) {
+           right_hand: uint) -> (Philosopher, Sender<PickupPermission>, Receiver<int>) {
         let (tx, rx)   = channel();
         let (tx1, rx1) = channel();
 
@@ -101,7 +106,7 @@ fn main() {
 }
 
 fn process_philosopher(chopsticks: &mut [bool, ..5],
-                       tx: &Sender<bool>,
+                       tx: &Sender<PickupPermission>,
                        rx: &Receiver<int>,
                        remaining: &mut uint) {
 
@@ -113,14 +118,14 @@ fn process_philosopher(chopsticks: &mut [bool, ..5],
     match response {
         0 => {
             *remaining += -1;
-            tx.send(false);
+            tx.send(NotAllowed);
         },
         x if x > 0 => {
             if chopsticks[(x - 1) as uint] {
-                tx.send(false);
+                tx.send(NotAllowed);
             } else {
                 chopsticks[(x - 1) as uint] = true;
-                tx.send(true);
+                tx.send(Allowed);
             }
         },
         x => { chopsticks[((-x) - 1) as uint] = false; },
