@@ -104,7 +104,6 @@ fn main() {
         process_philosopher(&mut chopsticks, &tx3, &rx3, &mut remaining);
         process_philosopher(&mut chopsticks, &tx4, &rx4, &mut remaining);
         process_philosopher(&mut chopsticks, &tx5, &rx5, &mut remaining);
-        std::task::deschedule();
     }
 
     println!("Done!");
