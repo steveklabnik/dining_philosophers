@@ -34,35 +34,20 @@ struct Chopstick(Status);
 
 fn main() {
     let (p, rx) = Philosopher::new("Karl Marx", 1, 2,);
-
-    spawn(proc() {
-        p.eat();
-    });
+    spawn(proc() { p.eat() });
 
     let (p, rx) = Philosopher::new("Gilles Deleuze", 2, 3);
-
-    spawn(proc() {
-        p.eat();
-    });
+    spawn(proc() { p.eat() });
 
     let (p, rx) = Philosopher::new("Baruch Spinoza", 3, 4);
-
-    spawn(proc() {
-        p.eat();
-    });
+    spawn(proc() { p.eat() });
 
     let (p, rx) = Philosopher::new("Friedrich Nietzsche", 4, 5);
-
-    spawn(proc() {
-        p.eat();
-    });
+    spawn(proc() { p.eat() });
 
     // Foucault is left handed. ;)
     let (p, rx) = Philosopher::new("Michel Foucault", 1, 5);
-
-    spawn(proc() {
-        p.eat();
-    });
+    spawn(proc() { p.eat() });
 
     let mut chopsticks = Vec::from_fn(5, |_| Chopstick(OnTable));
 }
