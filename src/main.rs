@@ -1,54 +1,129 @@
+use std::io::timer::sleep;
+
 struct Philosopher {
     name: String,
-    channel: Sender<int>,
-    left_hand: int,
-    right_hand: int,
+    sender: Sender<int>,
+    receiver: Receiver<int>,
+    left_hand: uint,
+    right_hand: uint,
 }
 
 impl Philosopher {
     fn eat(&self) {
-        println!("{} is eating.", self.name);
+        println!("{} has sat down to eat.", self.name);
+
+        for _ in range(1i, 3) {
+            println!("{} is thinking.", self.name);
+
+            sleep(10000 as u64);
+
+            println!("{} is hungry.", self.name);
+
+
+            loop {
+                self.sender.send(self.left_hand as int);
+                if self.receiver.recv() != 0 { break; }
+            }
+
+            println!("{} picked up their left chopstick.", self.name);
+
+            loop {
+                self.sender.send(self.right_hand as int);
+                if self.receiver.recv() != 0 { break; }
+            }
+
+            println!("{} picked up their right chopstick.", self.name);
+            println!("{} is eating.", self.name);
+            
+            sleep(10000 as u64);
+
+            println!("{} is done eating.", self.name);
+
+            self.sender.send(self.left_hand as int * -1);
+            println!("{} has put down their left chopstick.", self.name);
+            self.sender.send(self.right_hand as int * -1);
+            println!("{} has put down their right chopstick.", self.name);
+        }
+
+        self.sender.send(0);
+        self.receiver.recv();
+
+        println!("{} is done with their meal.", self.name);
     }
 
     fn new(name: &str,
-           left_hand: int,
-           right_hand: int) -> (Philosopher, Receiver<int>) {
-        let (tx, rx) = channel();
+           left_hand: uint,
+           right_hand: uint) -> (Philosopher, Sender<int>, Receiver<int>) {
+        let (tx, rx)   = channel();
+        let (tx1, rx1) = channel();
+
         let p = Philosopher {
             name: name.to_string(),
-            channel: tx,
-            left_hand: 1,
-            right_hand: 2,
+            sender: tx,
+            receiver: rx1,
+            left_hand: left_hand,
+            right_hand: right_hand,
         };
         
-        (p, rx)
+        (p, tx1, rx)
     }
 }
 
-enum Status {
-    OnTable,
-    InUse,
-}
-
-struct Chopstick(Status);
-
 fn main() {
-    let (p, rx) = Philosopher::new("Karl Marx", 1, 2,);
+    let (p, tx1, rx1)  = Philosopher::new("Karl Marx", 1, 2);
     spawn(proc() { p.eat() });
 
-    let (p, rx) = Philosopher::new("Gilles Deleuze", 2, 3);
+    let (p, tx2, rx2) = Philosopher::new("Gilles Deleuze", 2, 3);
     spawn(proc() { p.eat() });
 
-    let (p, rx) = Philosopher::new("Baruch Spinoza", 3, 4);
+    let (p, tx3, rx3) = Philosopher::new("Baruch Spinoza", 3, 4);
     spawn(proc() { p.eat() });
 
-    let (p, rx) = Philosopher::new("Friedrich Nietzsche", 4, 5);
+    let (p, tx4, rx4) = Philosopher::new("Friedrich Nietzsche", 4, 5);
     spawn(proc() { p.eat() });
 
     // Foucault is left handed. ;)
-    let (p, rx) = Philosopher::new("Michel Foucault", 1, 5);
+    let (p, tx5, rx5) = Philosopher::new("Michel Foucault", 1, 5);
     spawn(proc() { p.eat() });
 
-    let mut chopsticks = Vec::from_fn(5, |_| Chopstick(OnTable));
+    let mut chopsticks = [false, false, false, false, false];
+
+    let mut remaining = 5u;
+    while remaining != 0 {
+        process_philosopher(&mut chopsticks, &tx1, &rx1, &mut remaining);
+        process_philosopher(&mut chopsticks, &tx2, &rx2, &mut remaining);
+        process_philosopher(&mut chopsticks, &tx3, &rx3, &mut remaining);
+        process_philosopher(&mut chopsticks, &tx4, &rx4, &mut remaining);
+        process_philosopher(&mut chopsticks, &tx5, &rx5, &mut remaining);
+        std::task::deschedule();
+    }
+
+    println!("Done!");
 }
 
+fn process_philosopher(chopsticks: &mut [bool, ..5],
+                       tx: &Sender<int>,
+                       rx: &Receiver<int>,
+                       remaining: &mut uint) {
+
+    let response = match rx.try_recv() {
+        Ok(i) => i,
+        Err(_) => return,
+    };
+        
+    match response {
+        0 => {
+            *remaining += -1;
+            tx.send(0);
+        },
+        x if x > 0 => {
+            if chopsticks[(x - 1) as uint] {
+                tx.send(0);
+            } else {
+                chopsticks[(x - 1) as uint] = true;
+                tx.send(1);
+            }
+        },
+        x => { chopsticks[((-x) - 1) as uint] = false; },
+    }
+}
