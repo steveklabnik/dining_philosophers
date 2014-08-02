@@ -29,7 +29,6 @@ impl Philosopher {
             println!("{} is hungry.", self.name);
 
             self.take_first_chopstick();
-
             self.take_second_chopstick();
 
             println!("{} is eating.", self.name);
