@@ -77,7 +77,7 @@ impl Philosopher {
 
     fn new(name: &str,
            first_chopstick: uint,
-           second_chopstick: uint) -> (Philosopher, Sender<PickupPermission>, Receiver<PhilosopherAction>) {
+           second_chopstick: uint) -> (Philosopher, (Sender<PickupPermission>, Receiver<PhilosopherAction>)) {
         let (tx, rx)   = channel();
         let (tx1, rx1) = channel();
 
@@ -89,7 +89,7 @@ impl Philosopher {
             second_chopstick: second_chopstick,
         };
         
-        (p, tx1, rx)
+        (p, (tx1, rx))
     }
 }
 
@@ -136,29 +136,23 @@ impl Table {
 }
 
 fn main() {
-    let (p, tx1, rx1)  = Philosopher::new("Karl Marx", 1, 2);
+    let (p, c1)  = Philosopher::new("Karl Marx", 1, 2);
     spawn(proc() { p.eat() });
 
-    let (p, tx2, rx2) = Philosopher::new("Gilles Deleuze", 2, 3);
+    let (p, c2) = Philosopher::new("Gilles Deleuze", 2, 3);
     spawn(proc() { p.eat() });
 
-    let (p, tx3, rx3) = Philosopher::new("Baruch Spinoza", 3, 4);
+    let (p, c3) = Philosopher::new("Baruch Spinoza", 3, 4);
     spawn(proc() { p.eat() });
 
-    let (p, tx4, rx4) = Philosopher::new("Friedrich Nietzsche", 4, 5);
+    let (p, c4) = Philosopher::new("Friedrich Nietzsche", 4, 5);
     spawn(proc() { p.eat() });
 
     // Foucault is left handed. ;)
-    let (p, tx5, rx5) = Philosopher::new("Michel Foucault", 1, 5);
+    let (p, c5) = Philosopher::new("Michel Foucault", 1, 5);
     spawn(proc() { p.eat() });
 
-    let mut table = Table::new([
-        (tx1, rx1),
-        (tx2, rx2),
-        (tx3, rx3),
-        (tx4, rx4),
-        (tx5, rx5),
-    ]);
+    let mut table = Table::new([c1, c2, c3, c4, c5]);
 
     table.have_dinner();
 
