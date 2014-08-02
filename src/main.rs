@@ -93,6 +93,48 @@ impl Philosopher {
     }
 }
 
+struct Table {
+    remaining: int,
+    chopsticks: [bool, ..5],
+    philosophers: [(Sender<PickupPermission>,
+                    Receiver<PhilosopherAction>), ..5],
+}
+
+impl Table {
+    fn new(philosophers: [(Sender<PickupPermission>,
+                           Receiver<PhilosopherAction>), ..5]) -> Table {
+        Table {
+            remaining: 5i,
+            chopsticks: [false, false, false, false, false],
+            philosophers: philosophers,
+        }
+    }
+
+    fn have_dinner(&mut self) {
+        while self.remaining != 0 {
+            for &(ref tx, ref rx) in self.philosophers.iter() {
+                let response = match rx.try_recv() {
+                    Ok(action) => action,
+                    Err(_) => continue,
+                };
+
+                match response {
+                    Sated => { self.remaining += -1 },
+                    Take(x) => {
+                        if self.chopsticks[x - 1] {
+                            tx.send(NotAllowed);
+                        } else {
+                            self.chopsticks[x - 1] = true;
+                            tx.send(Allowed);
+                        }
+                    },
+                    Put(x) => { self.chopsticks[x - 1] = false; },
+                }
+            }
+        }
+    }
+}
+
 fn main() {
     let (p, tx1, rx1)  = Philosopher::new("Karl Marx", 1, 2);
     spawn(proc() { p.eat() });
@@ -110,35 +152,15 @@ fn main() {
     let (p, tx5, rx5) = Philosopher::new("Michel Foucault", 1, 5);
     spawn(proc() { p.eat() });
 
-    let mut chopsticks = [false, false, false, false, false];
-    let philosophers = [(tx1, rx1),
-                        (tx2, rx2),
-                        (tx3, rx3),
-                        (tx4, rx4),
-                        (tx5, rx5)];
+    let mut table = Table::new([
+        (tx1, rx1),
+        (tx2, rx2),
+        (tx3, rx3),
+        (tx4, rx4),
+        (tx5, rx5),
+    ]);
 
-    let mut remaining = 5u;
-    while remaining != 0 {
-        for &(ref tx, ref rx) in philosophers.iter() {
-            let response = match rx.try_recv() {
-                Ok(action) => action,
-                Err(_) => return,
-            };
-
-            match response {
-                Sated => { remaining += -1 },
-                Take(x) => {
-                    if chopsticks[x - 1] {
-                        tx.send(NotAllowed);
-                    } else {
-                        chopsticks[x - 1] = true;
-                        tx.send(Allowed);
-                    }
-                },
-                Put(x) => { chopsticks[x - 1] = false; },
-            }
-        }
-    }
+    table.have_dinner();
 
     println!("Done!");
 }
