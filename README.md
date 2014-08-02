@@ -1,5 +1,7 @@
 # Dining Philosophers
 
+[![Build Status](https://travis-ci.org/steveklabnik/dining_philosophers.svg?branch=master)](https://travis-ci.org/steveklabnik/dining_philosophers)
+
 The classic concurrency problem, in Rust.
 
 ## Trying it out
