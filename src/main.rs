@@ -50,7 +50,6 @@ impl Philosopher {
         }
 
         self.sender.send(0);
-        self.receiver.recv();
 
         println!("{} is done with their meal.", self.name);
     }
@@ -118,7 +117,6 @@ fn process_philosopher(chopsticks: &mut [bool, ..5],
     match response {
         0 => {
             *remaining += -1;
-            tx.send(NotAllowed);
         },
         x if x > 0 => {
             if chopsticks[(x - 1) as uint] {
