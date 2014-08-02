@@ -1,9 +1,9 @@
 use std::io::timer::sleep;
+use std::comm;
 
 struct Philosopher {
     name: String,
-    sender: Sender<PhilosopherAction>,
-    receiver: Receiver<PickupPermission>,
+    channel: PhilosopherChannel<PhilosopherAction, PickupPermission>,
     first_chopstick: uint,
     second_chopstick: uint,
 }
@@ -17,6 +17,31 @@ enum PhilosopherAction {
 enum PickupPermission {
     Allowed,
     NotAllowed, 
+}
+
+struct PhilosopherChannel<S, R> {
+    tx: Sender<S>,
+    rx: Receiver<R>,
+}
+
+fn make_channel() -> (PhilosopherChannel<PhilosopherAction, PickupPermission>,
+                    PhilosopherChannel<PickupPermission, PhilosopherAction>) {
+    let (tx1, rx1) = channel();
+    let (tx2, rx2) = channel();
+    (PhilosopherChannel { tx: tx1, rx: rx2 },
+     PhilosopherChannel { tx: tx2, rx: rx1 })
+}
+
+impl<S:Send,R:Send> PhilosopherChannel<S, R> {
+    fn send(&self, x: S) {
+        self.tx.send(x)
+    }
+    fn recv(&self) -> R {
+        self.rx.recv()
+    }
+    fn try_recv(&self) -> Result<R, comm::TryRecvError> {
+        self.rx.try_recv()
+    }
 }
 
 impl Philosopher {
@@ -39,7 +64,7 @@ impl Philosopher {
             self.put_second_chopstick();
         }
 
-        self.sender.send(Sated);
+        self.channel.send(Sated);
 
         println!("{} is done with their meal.", self.name);
     }
@@ -56,8 +81,8 @@ impl Philosopher {
 
     fn take_chopstick(&self, chopstick: uint) {
         loop {
-            self.sender.send(Take(chopstick));
-            match self.receiver.recv() { Allowed => break, _ => {}}
+            self.channel.send(Take(chopstick));
+            match self.channel.recv() { Allowed => break, _ => {}}
         }
     }
 
@@ -72,37 +97,36 @@ impl Philosopher {
     }
 
     fn put_chopstick(&self, chopstick: uint) {
-        self.sender.send(Put(chopstick));
+        self.channel.send(Put(chopstick));
     }
 
     fn new(name: &str,
            first_chopstick: uint,
-           second_chopstick: uint) -> (Philosopher, (Sender<PickupPermission>, Receiver<PhilosopherAction>)) {
-        let (tx, rx)   = channel();
-        let (tx1, rx1) = channel();
+           second_chopstick: uint) -> (Philosopher,
+                                       PhilosopherChannel<PickupPermission,
+                                                          PhilosopherAction>) {
+        let (c1, c2) = make_channel();
 
         let p = Philosopher {
             name: name.to_string(),
-            sender: tx,
-            receiver: rx1,
+            channel: c1,
             first_chopstick: first_chopstick,
             second_chopstick: second_chopstick,
         };
         
-        (p, (tx1, rx))
+        (p, c2)
     }
 }
 
 struct Table {
     remaining: int,
     chopsticks: [bool, ..5],
-    philosophers: [(Sender<PickupPermission>,
-                    Receiver<PhilosopherAction>), ..5],
+    philosophers: [PhilosopherChannel<PickupPermission, PhilosopherAction>, ..5],
 }
 
 impl Table {
-    fn new(philosophers: [(Sender<PickupPermission>,
-                           Receiver<PhilosopherAction>), ..5]) -> Table {
+    fn new(philosophers: [PhilosopherChannel<PickupPermission,
+                                             PhilosopherAction>, ..5]) -> Table {
         Table {
             remaining: 5i,
             chopsticks: [false, false, false, false, false],
@@ -112,8 +136,8 @@ impl Table {
 
     fn have_dinner(&mut self) {
         while self.remaining != 0 {
-            for &(ref tx, ref rx) in self.philosophers.iter() {
-                let response = match rx.try_recv() {
+            for channel in self.philosophers.iter() {
+                let response = match channel.try_recv() {
                     Ok(action) => action,
                     Err(_) => continue,
                 };
@@ -122,10 +146,10 @@ impl Table {
                     Sated => { self.remaining += -1 },
                     Take(x) => {
                         if self.chopsticks[x - 1] {
-                            tx.send(NotAllowed);
+                            channel.send(NotAllowed);
                         } else {
                             self.chopsticks[x - 1] = true;
-                            tx.send(Allowed);
+                            channel.send(Allowed);
                         }
                     },
                     Put(x) => { self.chopsticks[x - 1] = false; },
