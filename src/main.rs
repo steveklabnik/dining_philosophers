@@ -7,10 +7,16 @@ enum PickupPermission {
 
 struct Philosopher {
     name: String,
-    sender: Sender<int>,
+    sender: Sender<PhilosopherAction>,
     receiver: Receiver<PickupPermission>,
     first_chopstick: uint,
     second_chopstick: uint,
+}
+
+enum PhilosopherAction {
+    Take(uint),
+    Put(uint),
+    Sated,
 }
 
 impl Philosopher {
@@ -25,14 +31,14 @@ impl Philosopher {
             println!("{} is hungry.", self.name);
 
             loop {
-                self.sender.send(self.first_chopstick as int);
+                self.sender.send(Take(self.first_chopstick));
                 match self.receiver.recv() { Allowed => break, _ => {}}
             }
 
             println!("{} picked up their first chopstick.", self.name);
 
             loop {
-                self.sender.send(self.second_chopstick as int);
+                self.sender.send(Take(self.second_chopstick));
                 match self.receiver.recv() { Allowed => break, _ => {}}
             }
 
@@ -43,20 +49,20 @@ impl Philosopher {
 
             println!("{} is done eating.", self.name);
 
-            self.sender.send(self.first_chopstick as int * -1);
+            self.sender.send(Put(self.first_chopstick ));
             println!("{} has put down their first chopstick.", self.name);
-            self.sender.send(self.second_chopstick as int * -1);
+            self.sender.send(Put(self.second_chopstick));
             println!("{} has put down their second chopstick.", self.name);
         }
 
-        self.sender.send(0);
+        self.sender.send(Sated);
 
         println!("{} is done with their meal.", self.name);
     }
 
     fn new(name: &str,
            first_chopstick: uint,
-           second_chopstick: uint) -> (Philosopher, Sender<PickupPermission>, Receiver<int>) {
+           second_chopstick: uint) -> (Philosopher, Sender<PickupPermission>, Receiver<PhilosopherAction>) {
         let (tx, rx)   = channel();
         let (tx1, rx1) = channel();
 
@@ -106,26 +112,26 @@ fn main() {
 
 fn process_philosopher(chopsticks: &mut [bool, ..5],
                        tx: &Sender<PickupPermission>,
-                       rx: &Receiver<int>,
+                       rx: &Receiver<PhilosopherAction>,
                        remaining: &mut uint) {
 
     let response = match rx.try_recv() {
-        Ok(i) => i,
+        Ok(action) => action,
         Err(_) => return,
     };
         
     match response {
-        0 => {
+        Sated => {
             *remaining += -1;
         },
-        x if x > 0 => {
-            if chopsticks[(x - 1) as uint] {
+        Take(x) => {
+            if chopsticks[x - 1] {
                 tx.send(NotAllowed);
             } else {
-                chopsticks[(x - 1) as uint] = true;
+                chopsticks[x - 1] = true;
                 tx.send(Allowed);
             }
         },
-        x => { chopsticks[((-x) - 1) as uint] = false; },
+        Put(x) => { chopsticks[x - 1] = false; },
     }
 }
