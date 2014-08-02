@@ -1,10 +1,5 @@
 use std::io::timer::sleep;
 
-enum PickupPermission {
-    Allowed,
-    NotAllowed, 
-}
-
 struct Philosopher {
     name: String,
     sender: Sender<PhilosopherAction>,
@@ -19,32 +14,30 @@ enum PhilosopherAction {
     Sated,
 }
 
+enum PickupPermission {
+    Allowed,
+    NotAllowed, 
+}
+
 impl Philosopher {
     fn eat(&self) {
         println!("{} has sat down to eat.", self.name);
 
         for _ in range(1i, 3) {
             println!("{} is thinking.", self.name);
-
             sleep(10_000u64);
-
             println!("{} is hungry.", self.name);
 
             self.take_first_chopstick();
-            println!("{} picked up their first chopstick.", self.name);
 
             self.take_second_chopstick();
-            println!("{} picked up their second chopstick.", self.name);
 
             println!("{} is eating.", self.name);
-            
             sleep(10_000u64);
             println!("{} is done eating.", self.name);
 
             self.put_first_chopstick();
-            println!("{} has put down their first chopstick.", self.name);
             self.put_second_chopstick();
-            println!("{} has put down their second chopstick.", self.name);
         }
 
         self.sender.send(Sated);
@@ -54,10 +47,12 @@ impl Philosopher {
 
     fn take_first_chopstick(&self) {
         self.take_chopstick(self.first_chopstick);
+        println!("{} picked up their first chopstick.", self.name);
     }
 
     fn take_second_chopstick(&self) {
         self.take_chopstick(self.second_chopstick);
+        println!("{} picked up their second chopstick.", self.name);
     }
 
     fn take_chopstick(&self, chopstick: uint) {
@@ -69,10 +64,12 @@ impl Philosopher {
 
     fn put_first_chopstick(&self) {
         self.put_chopstick(self.first_chopstick);
+        println!("{} has put down their first chopstick.", self.name);
     }
 
     fn put_second_chopstick(&self) {
         self.put_chopstick(self.second_chopstick);
+        println!("{} has put down their second chopstick.", self.name);
     }
 
     fn put_chopstick(&self, chopstick: uint) {
