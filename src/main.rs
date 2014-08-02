@@ -115,14 +115,17 @@ fn main() {
     spawn(proc() { p.eat() });
 
     let mut chopsticks = [false, false, false, false, false];
+    let philosophers = [(tx1, rx1),
+                        (tx2, rx2),
+                        (tx3, rx3),
+                        (tx4, rx4),
+                        (tx5, rx5)];
 
     let mut remaining = 5u;
     while remaining != 0 {
-        process_philosopher(&mut chopsticks, &tx1, &rx1, &mut remaining);
-        process_philosopher(&mut chopsticks, &tx2, &rx2, &mut remaining);
-        process_philosopher(&mut chopsticks, &tx3, &rx3, &mut remaining);
-        process_philosopher(&mut chopsticks, &tx4, &rx4, &mut remaining);
-        process_philosopher(&mut chopsticks, &tx5, &rx5, &mut remaining);
+        for &(ref tx, ref rx) in philosophers.iter() {
+            process_philosopher(&mut chopsticks, tx, rx, &mut remaining);
+        }
     }
 
     println!("Done!");
