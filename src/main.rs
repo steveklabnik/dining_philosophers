@@ -15,10 +15,9 @@ impl Philosopher {
         for _ in range(1i, 3) {
             println!("{} is thinking.", self.name);
 
-            sleep(10000 as u64);
+            sleep(10_000u64);
 
             println!("{} is hungry.", self.name);
-
 
             loop {
                 self.sender.send(self.left_hand as int);
@@ -35,7 +34,7 @@ impl Philosopher {
             println!("{} picked up their right chopstick.", self.name);
             println!("{} is eating.", self.name);
             
-            sleep(10000 as u64);
+            sleep(10_000u64);
 
             println!("{} is done eating.", self.name);
 
