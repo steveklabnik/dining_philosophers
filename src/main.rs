@@ -1,4 +1,5 @@
 use std::io::timer::sleep;
+use std::time::Duration;
 use std::comm;
 
 struct Philosopher {
@@ -50,14 +51,14 @@ impl Philosopher {
 
         for _ in range(1i, 3) {
             println!("{} is thinking.", self.name);
-            sleep(10_000u64);
+            sleep(Duration::microseconds(10));
             println!("{} is hungry.", self.name);
 
             self.take_first_chopstick();
             self.take_second_chopstick();
 
             println!("{} is eating.", self.name);
-            sleep(10_000u64);
+            sleep(Duration::microseconds(10));
             println!("{} is done eating.", self.name);
 
             self.put_first_chopstick();
