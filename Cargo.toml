@@ -1,5 +1,5 @@
 [package]
 
 name = "dining_philosophers"
-version = "0.0.1"
+version = "1.0.0"
 authors = ["Steve Klabnik <steve@steveklabnik.com>"]
