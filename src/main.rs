@@ -65,7 +65,7 @@ impl Philosopher {
             self.put_second_chopstick();
         }
 
-        self.channel.send(Sated);
+        self.channel.send(PhilosopherAction::Sated);
 
         println!("{} is done with their meal.", self.name);
     }
@@ -82,8 +82,8 @@ impl Philosopher {
 
     fn take_chopstick(&self, chopstick: uint) {
         loop {
-            self.channel.send(Take(chopstick));
-            match self.channel.recv() { Allowed => break, _ => {}}
+            self.channel.send(PhilosopherAction::Take(chopstick));
+            match self.channel.recv() { PickupPermission::Allowed => break, _ => {}}
         }
     }
 
@@ -98,7 +98,7 @@ impl Philosopher {
     }
 
     fn put_chopstick(&self, chopstick: uint) {
-        self.channel.send(Put(chopstick));
+        self.channel.send(PhilosopherAction::Put(chopstick));
     }
 
     fn new(name: &str,
@@ -144,16 +144,16 @@ impl Table {
                 };
 
                 match response {
-                    Sated => { self.remaining += -1 },
-                    Take(x) => {
+                    PhilosopherAction::Sated => { self.remaining += -1 },
+                    PhilosopherAction::Take(x) => {
                         if self.chopsticks[x - 1] {
-                            channel.send(NotAllowed);
+                            channel.send(PickupPermission::NotAllowed);
                         } else {
                             self.chopsticks[x - 1] = true;
-                            channel.send(Allowed);
+                            channel.send(PickupPermission::Allowed);
                         }
                     },
-                    Put(x) => { self.chopsticks[x - 1] = false; },
+                    PhilosopherAction::Put(x) => { self.chopsticks[x - 1] = false; },
                 }
             }
         }
