@@ -3,3 +3,5 @@
 name = "dining_philosophers"
 version = "0.10.0"
 authors = ["Steve Klabnik <steve@steveklabnik.com>"]
+description = "The classic concurrency problem, in Rust."
+license = "MIT"
