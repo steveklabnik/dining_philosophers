@@ -17,7 +17,7 @@ enum PhilosopherAction {
 
 enum PickupPermission {
     Allowed,
-    NotAllowed, 
+    NotAllowed,
 }
 
 struct PhilosopherChannel<S, R> {
@@ -114,7 +114,7 @@ impl Philosopher {
             first_chopstick: first_chopstick,
             second_chopstick: second_chopstick,
         };
-        
+
         (p, c2)
     }
 }
@@ -162,20 +162,20 @@ impl Table {
 
 fn main() {
     let (p, c1)  = Philosopher::new("Karl Marx", 1, 2);
-    spawn(proc() { p.eat() });
+    spawn(move || { p.eat() });
 
     let (p, c2) = Philosopher::new("Gilles Deleuze", 2, 3);
-    spawn(proc() { p.eat() });
+    spawn(move || { p.eat() });
 
     let (p, c3) = Philosopher::new("Baruch Spinoza", 3, 4);
-    spawn(proc() { p.eat() });
+    spawn(move || { p.eat() });
 
     let (p, c4) = Philosopher::new("Friedrich Nietzsche", 4, 5);
-    spawn(proc() { p.eat() });
+    spawn(move || { p.eat() });
 
     // Foucault is left handed. ;)
     let (p, c5) = Philosopher::new("Michel Foucault", 1, 5);
-    spawn(proc() { p.eat() });
+    spawn(move || { p.eat() });
 
     let mut table = Table::new([c1, c2, c3, c4, c5]);
 
