@@ -1,6 +1,7 @@
 use std::io::timer::sleep;
 use std::time::Duration;
-use std::comm;
+use std::thread::Thread;
+use std::sync::mpsc;
 
 struct Philosopher {
     name: String,
@@ -21,26 +22,26 @@ enum PickupPermission {
 }
 
 struct PhilosopherChannel<S, R> {
-    tx: Sender<S>,
-    rx: Receiver<R>,
+    tx: mpsc::Sender<S>,
+    rx: mpsc::Receiver<R>,
 }
 
 fn make_channel() -> (PhilosopherChannel<PhilosopherAction, PickupPermission>,
                     PhilosopherChannel<PickupPermission, PhilosopherAction>) {
-    let (tx1, rx1) = channel();
-    let (tx2, rx2) = channel();
+    let (tx1, rx1) = mpsc::channel();
+    let (tx2, rx2) = mpsc::channel();
     (PhilosopherChannel { tx: tx1, rx: rx2 },
      PhilosopherChannel { tx: tx2, rx: rx1 })
 }
 
 impl<S:Send,R:Send> PhilosopherChannel<S, R> {
     fn send(&self, x: S) {
-        self.tx.send(x)
+        self.tx.send(x).unwrap()
     }
     fn recv(&self) -> R {
-        self.rx.recv()
+        self.rx.recv().unwrap()
     }
-    fn try_recv(&self) -> Result<R, comm::TryRecvError> {
+    fn try_recv(&self) -> Result<R, mpsc::TryRecvError> {
         self.rx.try_recv()
     }
 }
@@ -121,13 +122,13 @@ impl Philosopher {
 
 struct Table {
     remaining: int,
-    chopsticks: [bool, ..5],
-    philosophers: [PhilosopherChannel<PickupPermission, PhilosopherAction>, ..5],
+    chopsticks: [bool; 5],
+    philosophers: [PhilosopherChannel<PickupPermission, PhilosopherAction>; 5],
 }
 
 impl Table {
     fn new(philosophers: [PhilosopherChannel<PickupPermission,
-                                             PhilosopherAction>, ..5]) -> Table {
+                                             PhilosopherAction>; 5]) -> Table {
         Table {
             remaining: 5i,
             chopsticks: [false, false, false, false, false],
@@ -162,20 +163,20 @@ impl Table {
 
 fn main() {
     let (p, c1)  = Philosopher::new("Karl Marx", 1, 2);
-    spawn(move || { p.eat() });
+    let _ = Thread::spawn(move || { p.eat() });
 
     let (p, c2) = Philosopher::new("Gilles Deleuze", 2, 3);
-    spawn(move || { p.eat() });
+    let _ = Thread::spawn(move || { p.eat() });
 
     let (p, c3) = Philosopher::new("Baruch Spinoza", 3, 4);
-    spawn(move || { p.eat() });
+    let _ = Thread::spawn(move || { p.eat() });
 
     let (p, c4) = Philosopher::new("Friedrich Nietzsche", 4, 5);
-    spawn(move || { p.eat() });
+    let _ = Thread::spawn(move || { p.eat() });
 
     // Foucault is left handed. ;)
     let (p, c5) = Philosopher::new("Michel Foucault", 1, 5);
-    spawn(move || { p.eat() });
+    let _ = Thread::spawn(move || { p.eat() });
 
     let mut table = Table::new([c1, c2, c3, c4, c5]);
 
