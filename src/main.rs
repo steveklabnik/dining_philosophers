@@ -1,4 +1,8 @@
-use std::io::timer::sleep;
+#![feature(std_misc)]
+#![feature(core)]
+#![feature(io)]
+
+use std::old_io::timer::sleep;
 use std::time::Duration;
 use std::thread::Thread;
 use std::sync::mpsc;
@@ -6,13 +10,13 @@ use std::sync::mpsc;
 struct Philosopher {
     name: String,
     channel: PhilosopherChannel<PhilosopherAction, PickupPermission>,
-    first_chopstick: uint,
-    second_chopstick: uint,
+    first_chopstick: u32,
+    second_chopstick: u32,
 }
 
 enum PhilosopherAction {
-    Take(uint),
-    Put(uint),
+    Take(u32),
+    Put(u32),
     Sated,
 }
 
@@ -50,7 +54,7 @@ impl Philosopher {
     fn eat(&self) {
         println!("{} has sat down to eat.", self.name);
 
-        for _ in range(1i, 3) {
+        for _ in range(1, 3) {
             println!("{} is thinking.", self.name);
             sleep(Duration::microseconds(10));
             println!("{} is hungry.", self.name);
@@ -81,7 +85,7 @@ impl Philosopher {
         println!("{} picked up their second chopstick.", self.name);
     }
 
-    fn take_chopstick(&self, chopstick: uint) {
+    fn take_chopstick(&self, chopstick: u32) {
         loop {
             self.channel.send(PhilosopherAction::Take(chopstick));
             match self.channel.recv() { PickupPermission::Allowed => break, _ => {}}
@@ -98,13 +102,13 @@ impl Philosopher {
         println!("{} has put down their second chopstick.", self.name);
     }
 
-    fn put_chopstick(&self, chopstick: uint) {
+    fn put_chopstick(&self, chopstick: u32) {
         self.channel.send(PhilosopherAction::Put(chopstick));
     }
 
     fn new(name: &str,
-           first_chopstick: uint,
-           second_chopstick: uint) -> (Philosopher,
+           first_chopstick: u32,
+           second_chopstick: u32) -> (Philosopher,
                                        PhilosopherChannel<PickupPermission,
                                                           PhilosopherAction>) {
         let (c1, c2) = make_channel();
@@ -121,7 +125,7 @@ impl Philosopher {
 }
 
 struct Table {
-    remaining: int,
+    remaining: i32,
     chopsticks: [bool; 5],
     philosophers: [PhilosopherChannel<PickupPermission, PhilosopherAction>; 5],
 }
@@ -130,7 +134,7 @@ impl Table {
     fn new(philosophers: [PhilosopherChannel<PickupPermission,
                                              PhilosopherAction>; 5]) -> Table {
         Table {
-            remaining: 5i,
+            remaining: 5,
             chopsticks: [false, false, false, false, false],
             philosophers: philosophers,
         }
@@ -147,14 +151,14 @@ impl Table {
                 match response {
                     PhilosopherAction::Sated => { self.remaining += -1 },
                     PhilosopherAction::Take(x) => {
-                        if self.chopsticks[x - 1] {
+                        if self.chopsticks[(x - 1) as usize] {
                             channel.send(PickupPermission::NotAllowed);
                         } else {
-                            self.chopsticks[x - 1] = true;
+                            self.chopsticks[(x - 1) as usize] = true;
                             channel.send(PickupPermission::Allowed);
                         }
                     },
-                    PhilosopherAction::Put(x) => { self.chopsticks[x - 1] = false; },
+                    PhilosopherAction::Put(x) => { self.chopsticks[(x - 1) as usize] = false; },
                 }
             }
         }
