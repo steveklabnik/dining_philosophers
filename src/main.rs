@@ -60,7 +60,7 @@ fn main() {
         Philosopher::new("Gilles Deleuze", done_tx.clone(), 1, 2),
         Philosopher::new("Karl Marx", done_tx.clone(), 2, 3),
         Philosopher::new("Friedrich Nietzsche", done_tx.clone(), 3, 4),
-        Philosopher::new("Michel Foucault", done_tx.clone(), 0, 4),
+        Philosopher::new("Michel Foucault", done_tx.clone(), 4, 0),
     ];
 
     let handles: Vec<_> = philosophers.into_iter().map(|p| {
