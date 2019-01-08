@@ -1,7 +1,7 @@
-use std::thread;
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
+use std::thread;
 
 struct Philosopher {
     name: String,
@@ -27,13 +27,17 @@ impl Philosopher {
     }
 
     fn eat(&self, table: &Table) {
-        let _left = table.forks[self.left].lock()
-            .ok().expect("Couldn't aquire left mutex");
-        let _right = table.forks[self.right].lock()
-            .ok().expect("Couldn't aquire right mutex");
+        let _left = table.forks[self.left]
+            .lock()
+            .ok()
+            .expect("Couldn't aquire left mutex");
+        let _right = table.forks[self.right]
+            .lock()
+            .ok()
+            .expect("Couldn't aquire right mutex");
 
         println!("{} is eating.", self.name);
-        
+
         thread::sleep_ms(1000);
 
         self.done();
@@ -47,13 +51,15 @@ struct Table {
 fn main() {
     let (done_tx, done_rx) = mpsc::channel();
 
-    let table = Arc::new(Table { forks: vec![
-        Mutex::new(true),
-        Mutex::new(true),
-        Mutex::new(true),
-        Mutex::new(true),
-        Mutex::new(true),
-    ]});
+    let table = Arc::new(Table {
+        forks: vec![
+            Mutex::new(true),
+            Mutex::new(true),
+            Mutex::new(true),
+            Mutex::new(true),
+            Mutex::new(true),
+        ],
+    });
 
     let philosophers = vec![
         Philosopher::new("Baruch Spinoza", done_tx.clone(), 0, 1),
@@ -63,13 +69,16 @@ fn main() {
         Philosopher::new("Michel Foucault", done_tx.clone(), 0, 4),
     ];
 
-    let handles: Vec<_> = philosophers.into_iter().map(|p| {
-        let table = table.clone();
+    let handles: Vec<_> = philosophers
+        .into_iter()
+        .map(|p| {
+            let table = table.clone();
 
-        thread::spawn(move || {
-            p.eat(&table);
+            thread::spawn(move || {
+                p.eat(&table);
+            })
         })
-    }).collect();
+        .collect();
 
     for _ in 0..5 {
         done_rx.recv().unwrap();
